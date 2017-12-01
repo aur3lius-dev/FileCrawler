@@ -207,7 +207,8 @@ class FileCrawler:
                 for e in ext_list:
                     self.printline('\t%s %s %s' %
                                    (e.ljust(18),
-                                    self.prettynumbers(self.file_stats.get(e)[0]).ljust(8),
+                                    self.prettynumbers(
+                                        self.file_stats.get(e)[0]).ljust(8),
                                     self.prettynumbers(self.file_stats.get(e)[1]).ljust(8)))
             else:
                 self.printline("\t%s %s" %
@@ -281,7 +282,7 @@ class FileCrawler:
                 else:
                     fext = 'no ext'
 
-            if self.typecount is not None:                        
+            if self.typecount is not None:
                 if fext in self.file_stats.keys():
                     inc = self.file_stats.get(fext)
                     self.file_stats[fext] = [inc[0] + 1, inc[1]]
@@ -294,8 +295,6 @@ class FileCrawler:
     def parsedirectory(self, i_dir):
         flist = []
         dlist = []
-        efilt = False
-        ifilt = False
         self.vprint('[?] Parsing %s' % i_dir)
 
         for (_, dirname, filenames) in walk(i_dir):
@@ -303,7 +302,8 @@ class FileCrawler:
                 if len(self.extfilter) > 0 or len(self.ignfilt) > 0:
                     ext = path.splitext(f)[1]
                     if ext not in self.ignfilt:
-                        self.vprint('[?] Found %s was not in %s' % (ext, str(self.ignfilt)))
+                        self.vprint('[?] Found %s was not in %s' %
+                                    (ext, str(self.ignfilt)))
                         if len(self.extfilter) > 0:
                             if ext in self.extfilter:
                                 flist.append(f)
@@ -339,6 +339,7 @@ class FileCrawler:
     @staticmethod
     def prettynumbers(o_str):
         return "{:,}".format(o_str)
+
 
 if __name__ == "__main__":
     f_crawl = FileCrawler()
