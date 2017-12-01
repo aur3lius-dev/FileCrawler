@@ -52,6 +52,8 @@ class FileCrawler:
         parser.add_argument("-e", "--extension", nargs='?', default=None,
                             help="filetype(s) to restrict search to. seperate lists"
                             " via commas with no spaces")
+        parser.add_argument("-i", "--ignore", nargs='?', default=None,
+                            help="list of file extensions to ignore during parsing")
         parser.add_argument("-l", "--linecount", action='store_true',
                             help="only perform a self.linecount. restrict filetypes"
                             " via the -e flag. may override the -s flag.")
@@ -82,13 +84,19 @@ class FileCrawler:
             self.tosearch = args.file
             self.i_type = 'f'
 
+        self.extfilter = []
         if args.extension is not None:
             self.extfilter = args.extension.split(',')
             for i, e in enumerate(self.extfilter):
                 if e[0] != '.':
                     self.extfilter[i] = '.' + e
-        else:
-            self.extfilter = None
+
+        self.ignfilt = []
+        if args.ignore is not None:
+            for e in args.ignore.split(','):
+                if e[0] != '.':
+                    e = '.' + e
+                self.ignfilt.append(e)
         self.rec = args.recursive
         self.verbose = args.verbose
         self.case = args.casesensitive
@@ -138,9 +146,13 @@ class FileCrawler:
             print('[*] Performing line count')
         if self.typecount and self.extfilter is None:
             print('[*] Enumerating all found file types')
-        if self.extfilter is not None:
+        if self.extfilter:
             print('[*] Filtering against the following file extensions:')
             for e in self.extfilter:
+                print('\t%s' % e)
+        if self.ignfilt:
+            print("[*] Ignoring the following file extensions:")
+            for e in self.ignfilt:
                 print('\t%s' % e)
         if self.outfile is not None:
             print('[*] Output written to file:\n\t%s' % self.outfile)
@@ -269,27 +281,36 @@ class FileCrawler:
                 else:
                     fext = 'no ext'
 
-            if self.typecount is not None and (self.extfilter is None or
-                                               fext in self.extfilter):
+            if self.typecount is not None:                        
                 if fext in self.file_stats.keys():
                     inc = self.file_stats.get(fext)
                     self.file_stats[fext] = [inc[0] + 1, inc[1]]
                 else:
                     self.file_stats[fext] = [1, 0]
 
-            if ((self.term is not None or self.linecount) and
-                    (self.extfilter is None or
-                     (self.extfilter is not None and fext in self.extfilter))):
+            if self.term is not None or self.linecount:
                 self.searchfile(i_dir + '/' + file, fext)
 
     def parsedirectory(self, i_dir):
         flist = []
         dlist = []
-
+        efilt = False
+        ifilt = False
         self.vprint('[?] Parsing %s' % i_dir)
 
         for (_, dirname, filenames) in walk(i_dir):
-            flist.extend(filenames)
+            for f in filenames:
+                if len(self.extfilter) > 0 or len(self.ignfilt) > 0:
+                    ext = path.splitext(f)[1]
+                    if ext not in self.ignfilt:
+                        self.vprint('[?] Found %s was not in %s' % (ext, str(self.ignfilt)))
+                        if len(self.extfilter) > 0:
+                            if ext in self.extfilter:
+                                flist.append(f)
+                        else:
+                            flist.append(f)
+                else:
+                    flist.append(f)
             dlist.extend(dirname)
             break
 
